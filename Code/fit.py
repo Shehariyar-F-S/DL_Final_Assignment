@@ -53,13 +53,25 @@ class Trainer:
                 
         return running_loss / total, (correct / total) * 100
 
-    def fit(self, train_loader, val_loader, epochs):
+    def fit(self, train_loader, val_loader, epochs, patience=5):
         print("\n Starting Training Routine...")
         print("-" * 50)
-        
+        best_val_loss = float('inf')
+        patience_counter = 0
+
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader)
             val_loss, val_acc = self.evaluate(val_loader)
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                torch.save(self.model.state_dict(), "best_model.pth")
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print(f"Early stopping triggered after {epoch+1} epochs.")
+                    break
             
             print(f"Epoch [{epoch+1:02d}/{epochs:02d}] | "
                   f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc:.2f}% | "
