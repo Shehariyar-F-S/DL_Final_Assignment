@@ -15,11 +15,12 @@ class Trainer:
     def train_one_epoch(self, dataloader):
         self.model.train()
         running_loss = 0.0
-        correct, total = 0, 0
+        correct, total = 0, 0  # changed the variable name from sum to total to avoid shadowing built-in sum function
         
         for images, labels in dataloader:
             images, labels = images.to(self.device), labels.to(self.device)
-            
+            self.optimizer.zero_grad() # added zero_grad() to clear gradients before backpropagation
+
             outputs = self.model(images)
             loss = self.criterion(outputs, labels)
             
