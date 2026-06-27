@@ -19,8 +19,31 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training executing on device: {device}")
 
-    train_loader, val_loader, test_loader = get_loaders(data=config["DATA"], data_path=config["DATA_PATH"], batch_size=config["BATCH_SIZE"], val_split=config["VAL_SPLIT"])
+    model_to_run = config.get("MODELS", [config.get("MODEL")])
 
+    for model_name in model_to_run:
+        print(f"\nTraining model: {model_name}")
+        config["MODEL"] = model_name  # Update the model in the config for each iteration
+
+        for dataset_config in config["DATASETS"]:
+            data_name = dataset_config["DATA"]
+            channels = dataset_config["CHANNELS"]
+            num_classes = dataset_config["NUM_CLASSES"]
+
+
+
+        train_loader, val_loader, test_loader = get_loaders(
+            data=data_name, 
+            data_path=config["DATA_PATH"], 
+            batch_size=config["BATCH_SIZE"], 
+            val_split=config["VAL_SPLIT", 0.1]
+        )
+
+        model_class = getattr(models, config["MODEL"])
+        model = model_class(in_channels=channels, num_classes=num_classes).to(device)
+        criterion = nn.CrossEntropyLoss()
+
+    
     model_class = getattr(models, config["MODEL"])
     model = model_class(in_channels=config["CHANNELS"], num_classes=config["NUM_CLASSES"] ).to(device)
     criterion = nn.CrossEntropyLoss()
@@ -28,6 +51,9 @@ def main():
 
     trainer = Trainer(model, criterion, optimizer, device)
     trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"])
+
+    test_loss, test_accuracy = trainer.evaluate(test_loader)
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
 
 if __name__ == "__main__":
     main()
