@@ -55,10 +55,12 @@ class Trainer:
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
 
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(predicted.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())  # Extend the list with the true labels
+                all_preds.extend(predicted.cpu().numpy())  # Extend the list with the predicted labels
 
-        return running_loss / total, (correct / total) * 100
+        precision, recall, f1_score, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro', zero_division=0)
+
+        return running_loss / total, (correct / total) * 100, precision * 100, recall * 100, f1_score * 100
 
     def fit(self, train_loader, val_loader, epochs, patience=5):
         print("\n Starting Training Routine...")
