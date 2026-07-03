@@ -91,7 +91,7 @@ class AlexNet(nn.Module):
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
 
-        self.avgpool = nn.AdaptiveAvgPool2d((2, 2)) # Fix: Added adaptive pooling
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2)) # Fix: Added  adaptive pooling 
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
