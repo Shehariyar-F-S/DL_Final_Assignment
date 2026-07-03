@@ -42,13 +42,10 @@ def main():
         model_class = getattr(models, config["MODEL"])
         model = model_class(in_channels=channels, num_classes=num_classes).to(device)
         criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
 
     
-    model_class = getattr(models, config["MODEL"])
-    model = model_class(in_channels=config["CHANNELS"], num_classes=config["NUM_CLASSES"] ).to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
-
+    #remooved the dublicate model code for model, criterion and optimizer 
     trainer = Trainer(model, criterion, optimizer, device)
     trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"])
 
