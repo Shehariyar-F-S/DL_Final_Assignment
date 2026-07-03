@@ -33,11 +33,11 @@ def main():
 
 
             train_loader, val_loader, test_loader = get_loaders( # fixed syntax error
-            data=data_name, 
-            data_path=config["DATA_PATH"], 
-            batch_size=config["BATCH_SIZE"], 
-            val_split=config.get("VAL_SPLIT", 0.1) # fixed syntax error
-        )
+                data=data_name, 
+                data_path=config["DATA_PATH"], 
+                batch_size=config["BATCH_SIZE"], 
+                val_split=config.get("VAL_SPLIT", 0.1) # fixed syntax error
+            )
 
             model_class = getattr(models, config["MODEL"])
             model = model_class(in_channels=channels, num_classes=num_classes).to(device)
