@@ -66,13 +66,13 @@ class ResBlock(nn.Module):
 
 class AlexNet(nn.Module):
     """AlexNet (Krizhevsky et al., 2012) adapted for smaller inputs."""
-    def __init__(self, **kwargs):
+    def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
 
         drop_rate = kwargs.get("drop_rate", 0.5)
         
         self.features = nn.Sequential(
-            nn.Conv2d(3, 48, kernel_size=7, stride=2, padding=3),
+            nn.Conv2d(in_channels, 48, kernel_size=7, stride=2, padding=3),
             nn.BatchNorm2d(48),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
@@ -90,19 +90,22 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2)) # Fix: Added adaptive pooling
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
-            nn.Linear(2048, 1024),
+            nn.Linear(192 * 2 * 2, 1024),   # Fix: 192 channels * 2 * 2 spatial dimensions = 768
             nn.ReLU(inplace=True),
             nn.Dropout(p=drop_rate),
             nn.Linear(1024, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(1024, 11),
+            nn.Linear(1024, num_classes),
         )
 
     def forward(self, x):
         x = self.features(x)
+        x = self.avgpool(x)  # Fix: pass thtrough adaptive pooling to ensure correct dimensions
         x = torch.flatten(x, 1)
         return self.classifier(x)
 
