@@ -45,12 +45,12 @@ def main():
             optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
 
     
-    #remooved the dublicate model code for model, criterion and optimizer 
-    trainer = Trainer(model, criterion, optimizer, device)
-    trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"])
+            #remooved the dublicate model code for model, criterion and optimizer 
+            trainer = Trainer(model, criterion, optimizer, device)
+            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"])
 
-    test_loss, test_accuracy = trainer.evaluate(test_loader)
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
+            test_loss, test_accuracy = trainer.evaluate(test_loader)
+            print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
 
 if __name__ == "__main__":
     main()
