@@ -176,7 +176,7 @@ class ResNet18(nn.Module):
         
         drop_rate = kwargs.get("drop_rate", 0.3)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.classifier = nn.sequential(
+        self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
             nn.Linear(512, num_classes)
         )
