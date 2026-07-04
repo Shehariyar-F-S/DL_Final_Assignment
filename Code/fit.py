@@ -5,6 +5,8 @@ MG 6/6/2026
 """
 import torch
 import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_fscore_support
+
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, device):
@@ -30,7 +32,7 @@ class Trainer:
             
             running_loss += loss.item() * images.size(0)
             _, predicted = outputs.max(1)
-            sum += labels.size(0)
+            total += labels.size(0)
             correct += predicted.eq(labels).sum().item()
             
         return running_loss / total, (correct / total) * 100
