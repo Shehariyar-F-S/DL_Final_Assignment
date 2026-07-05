@@ -53,6 +53,10 @@ class Trainer:
                 _, predicted = outputs.max(1)
                 total += labels.size(0)
                 correct += predicted.eq(labels).sum().item()
+
+                all_labels.extend(labels.cpu().numpy())  # Extend the list with the true labels
+                all_preds.extend(predicted.cpu().numpy())  # Extend the list with the predicted labels
+
                 
         return running_loss / total, (correct / total) * 100
 
