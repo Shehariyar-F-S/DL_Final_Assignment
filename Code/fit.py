@@ -9,7 +9,7 @@ from sklearn.metrics import precision_recall_fscore_support
 
 
 class Trainer:
-    def __init__(self, model, criterion, optimizer, device):
+    def __init__(self, model, criterion, optimizer, device, scheduler=None):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
