@@ -29,6 +29,21 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
 
     test_data = data_dict['test_images'] #fix: added the variables to hold the test data and labels for consistency
     test_labels = data_dict['test_labels'] 
+
+    #Preprocess the data: Convert to float and normalize to [0, 1]
+    def preprocess(x, y):
+        x = x.float() 
+        if x.max() > 1.0:  # Check if normalization is needed
+            x /= 255.0  # Normalize to [0, 1]
+        
+        if len(x.shape) == 3:  # If single channel, add channel dimension
+            x = x.unsqueeze(1)  # Add channel dimension for grayscale images
+
+        if x.shape[-1] < 32 or x.shape[-2] < 32:  # If images are smaller than 32x32, resize them
+            x = torch.nn.functional.interpolate(x, size=(32, 32), mode='bilinear', align_corners=False)
+
+        y = y.squeeze().long()
+        return x, y
     
     train_dataset = TensorDataset(train_data, train_labels)
     val_dataset = TensorDataset(val_data, val_labels)
