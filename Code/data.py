@@ -9,7 +9,8 @@ from torch.utils.data import TensorDataset, DataLoader
 
 def get_loaders(data, data_path, batch_size, val_split=0.1):
     d_path = Path(data_path) / f"{data}.pt"   # fixed path to load the data from the correct directory
-    data_dict = torch.load(d_path)
+    data_dict = torch.load(d_path, map_location=torch.device('cpu'), weights_only=False)  # Ensure data is loaded on CPU
+
 
     total_samples = data_dict['train_images'].shape[0]
     val_size = int(total_samples * val_split)
