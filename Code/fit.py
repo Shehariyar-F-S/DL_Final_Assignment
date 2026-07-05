@@ -4,6 +4,8 @@ MAI/IDL SS26 - Final assignment.
 MG 6/6/2026
 """
 import torch
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_fscore_support
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, device):
@@ -56,6 +58,11 @@ class Trainer:
 
                 all_labels.extend(labels.cpu().numpy())  # Extend the list with the true labels
                 all_preds.extend(predicted.cpu().numpy())  # Extend the list with the predicted labels
+
+        precision, recall, f1_score, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro', zero_division=0) # fix: added precision, recall, and f1_score calculations for better evaluation metrics
+
+        return running_loss / total, (correct / total) * 100, precision * 100, recall * 100, f1_score * 100
+
                 
         return running_loss / total, (correct / total) * 100
 
