@@ -13,6 +13,10 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
 
 
     total_samples = data_dict['train_images'].shape[0]
+    #shuffling the data to ensure randomness before splitting into train and validation sets
+    torch.manual_seed(42)  # For reproducibility
+    indices = torch.randperm(total_samples)
+    
     val_size = int(total_samples * val_split)
     val_start = total_samples - val_size
 
