@@ -14,6 +14,7 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.scheduler = scheduler
 
     def train_one_epoch(self, dataloader):
         self.model.train()
