@@ -80,6 +80,9 @@ class Trainer:
 
             train_losses.append(train_loss) #tracking the train loss for plotting
             val_losses.append(val_loss) #tracking the validation loss for plotting
+
+            if self.scheduler is not None:
+                self.scheduler.step(val_loss)  # Step the scheduler based on validation loss
         
             #save the best model weights based on validation loss
             if val_loss < best_val_loss:
