@@ -43,10 +43,12 @@ def main():
             model = model_class(in_channels=channels, num_classes=num_classes).to(device)
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
+            # Automatically halves the LR if val_loss stops improving for 5 epochs
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
 
     
             #remooved the dublicate model code for model, criterion and optimizer 
-            trainer = Trainer(model, criterion, optimizer, device)
+            trainer = Trainer(model, criterion, optimizer, device, scheduler)
             trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)
 
             test_loss, test_accuracy, precision, recall, f1_score = trainer.evaluate(test_loader)
