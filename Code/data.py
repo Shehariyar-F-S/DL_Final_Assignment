@@ -26,6 +26,9 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
     train_labels = shuffled_labels[:val_start]
     val_data = shuffled_images[val_start:]   # fix: data leak issue fixed for validation data and labels
     val_labels = shuffled_labels[val_start:]
+
+    test_data = data_dict['test_images'] #fix: added the variables to hold the test data and labels for consistency
+    test_labels = data_dict['test_labels'] 
     
     train_dataset = TensorDataset(train_data, train_labels)
     val_dataset = TensorDataset(val_data, val_labels)
