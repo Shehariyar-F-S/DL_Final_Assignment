@@ -22,12 +22,12 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
     val_start = total_samples - val_size
 
     train_data = shuffled_images[:val_start]   # data leak issue fixed.....
-    train_labels = shuffled_labels[:val_start].squeeze(1)  # Ensure labels are 1D for compatibility with loss functions
+    train_labels = shuffled_labels[:val_start]
     val_data = shuffled_images[val_start:]
-    val_labels = shuffled_labels[val_start:].squeeze(1)
+    val_labels = shuffled_labels[val_start:]
 
     test_data = data_dict['test_images']
-    test_labels = data_dict['test_labels'].squeeze(1)  # Ensure labels are 1D for compatibility with loss functions
+    test_labels = data_dict['test_labels']
 
     #Preprocess the data: Convert to float and normalize to [0, 1]
     def preprocess(x, y):
