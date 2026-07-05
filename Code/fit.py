@@ -56,11 +56,10 @@ class Trainer:
 
                 all_labels.extend(labels.cpu().numpy())  # Extend the list with the true labels
                 all_preds.extend(predicted.cpu().numpy())  # Extend the list with the predicted labels
-
                 
         return running_loss / total, (correct / total) * 100
 
-    def fit(self, train_loader, val_loader, epochs):
+    def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset"): # fix: added dataset_name parameter to the fit method for better logging
         print("\n Starting Training Routine...")
         print("-" * 50)
         
