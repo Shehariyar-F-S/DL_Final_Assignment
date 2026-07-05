@@ -80,3 +80,18 @@ class Trainer:
         
         print("-" * 50)
         print("Training Complete!")
+
+    def plot_losses(self, train_losses, val_losses, dataset_name):
+        fig, ax = plt.subplots(figsize=(7, 3))
+        ax.plot(train_losses, color='#005564', linewidth=2, label='Train Loss')
+        ax.plot(val_losses, color='#FF6A00', linewidth=2, label='Validation Loss')
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Cross Entropy Loss')
+        ax.set_title(f'Training Curve - {dataset_name}', color='#163C69', fontweight='bold')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(f'{dataset_name}_loss_curve.png', dpi=150, bbox_inches='tight')
+        plt.show()
+        plt.close(fig)
