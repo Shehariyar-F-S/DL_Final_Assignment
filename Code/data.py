@@ -48,10 +48,29 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
     train_data, train_labels = preprocess(train_data, train_labels)
     val_data, val_labels = preprocess(val_data, val_labels)
     test_data, test_labels = preprocess(test_data, test_labels)
+
+    class AugmentedDataset(torch.utils.data.Dataset):
     
-    train_dataset = TensorDataset(train_data, train_labels)
+        def __init__(self, images, labels):
+            self.images = images
+            self.labels = labels
+            self.transform = T.Compose([
+                T.RandomHorizontalFlip(p=0.5),
+                T.RandomRotation(degrees=15),
+                T.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+            ])
+        
+        def __len__(self):
+            return len(self.images)
+        
+        def __getitem__(self, idx):
+            image = self.transform(self.images[idx])
+            return image, self.labels[idx]
+    
+    train_dataset = AugmentedDataset(train_data, train_labels)
     val_dataset = TensorDataset(val_data, val_labels)
     test_dataset = TensorDataset(test_data, test_labels)
+    
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
