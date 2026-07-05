@@ -19,6 +19,7 @@ class Trainer:
         
         for images, labels in dataloader:
             images, labels = images.to(self.device), labels.to(self.device)
+            self.optimizer.zero_grad() # fix: added zero_grad() to clear gradients before backpropagation
             
             outputs = self.model(images)
             loss = self.criterion(outputs, labels)
