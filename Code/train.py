@@ -19,6 +19,17 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Training executing on device: {device}")
 
+    model_to_run = config.get("MODELS", [config.get("MODEL")])
+
+    for model_name in model_to_run:
+        print(f"\nTraining model: {model_name}")
+        config["MODEL"] = model_name  # Update the model in the config for each iteration
+
+        for dataset_config in config["DATASETS"]:
+            data_name = dataset_config["DATA"]
+            channels = dataset_config["CHANNELS"]
+            num_classes = dataset_config["NUM_CLASSES"] # enhancement:added the configuration for the model to use.
+
     train_loader, val_loader, _ = get_loaders(data=config["DATA"], data_path=config["DATA_PATH"], batch_size=config["BATCH_SIZE"])
 
     model_class = getattr(models, config["MODEL"])
