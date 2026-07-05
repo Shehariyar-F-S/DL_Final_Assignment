@@ -38,6 +38,9 @@ class Trainer:
         self.model.eval()
         running_loss = 0.0
         correct, total = 0, 0
+
+        all_labels = [] # fix: added variables to store all labels and predictions for further analysis
+        all_preds = []
         
         with torch.no_grad():
             for images, labels in dataloader:
