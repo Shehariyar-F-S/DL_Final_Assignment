@@ -45,6 +45,11 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
         y = y.squeeze().long()
         return x, y
     
+    # Apply preprocessing to train, validation, and test datasets
+    train_data, train_labels = preprocess(train_data, train_labels)
+    val_data, val_labels = preprocess(val_data, val_labels)
+    test_data, test_labels = preprocess(test_data, test_labels)
+    
     train_dataset = TensorDataset(train_data, train_labels)
     val_dataset = TensorDataset(val_data, val_labels)
     test_dataset = TensorDataset(data_dict['test_images'], data_dict['test_labels'])
