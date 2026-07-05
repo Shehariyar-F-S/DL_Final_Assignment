@@ -32,10 +32,11 @@ def main():
 
     train_loader, val_loader, test_loader = get_loaders(data=config["DATA"],  # fix: fixed syntax error for var test_loader
                                                         data_path=config["DATA_PATH"], 
-                                                        batch_size=config["BATCH_SIZE"])
+                                                        batch_size=config["BATCH_SIZE"],
+                                                        val_split=config.get("VAL_SPLIT", 0.1)) #added val_split
 
     model_class = getattr(models, config["MODEL"])
-    model = model_class(in_channels=config["CHANNELS"], num_classes=config["NUM_CLASSES"], drop_rate=0.99, activation_str=None).to(device)
+    model = model_class(in_channels=channels, num_classes=num_classes).to(device) #fix: removed the 0.99 dropout and intialized the model with the correct number of input channels and classes
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
 
