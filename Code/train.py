@@ -41,7 +41,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
 
     trainer = Trainer(model, criterion, optimizer, device)
-    trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"])
+    trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)  # fix: added dataset_name parameter to the fit method for better logging
 
 if __name__ == "__main__":
     main()
