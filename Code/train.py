@@ -30,7 +30,9 @@ def main():
             channels = dataset_config["CHANNELS"]
             num_classes = dataset_config["NUM_CLASSES"] # enhancement:added the configuration for the model to use.
 
-    train_loader, val_loader, _ = get_loaders(data=config["DATA"], data_path=config["DATA_PATH"], batch_size=config["BATCH_SIZE"])
+    train_loader, val_loader, test_loader = get_loaders(data=config["DATA"],  # fix: fixed syntax error for var test_loader
+                                                        data_path=config["DATA_PATH"], 
+                                                        batch_size=config["BATCH_SIZE"])
 
     model_class = getattr(models, config["MODEL"])
     model = model_class(in_channels=config["CHANNELS"], num_classes=config["NUM_CLASSES"], drop_rate=0.99, activation_str=None).to(device)
