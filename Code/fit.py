@@ -69,10 +69,23 @@ class Trainer:
     def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset"): # fix: added dataset_name parameter to the fit method for better logging
         print("\n Starting Training Routine...")
         print("-" * 50)
+
+        best_val_loss = float('inf') # Track the best loss
+        best_model_weights = None  # Track the best model weights
+
+        train_losses, val_losses = [], []
         
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader)
-            val_loss, val_acc = self.evaluate(val_loader)
+            val_loss, val_acc, val_prec, val_rec, val_f1 = self.evaluate(val_loader)
+
+            train_losses.append(train_loss) #tracking the train loss for plotting
+            val_losses.append(val_loss) #tracking the validation loss for plotting
+
+            #save the best model weights based on validation loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_model_weights = self.model.state_dict().copy()
             
             print(f"Epoch [{epoch+1:02d}/{epochs:02d}] | "
                   f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc:.2f}% | "
