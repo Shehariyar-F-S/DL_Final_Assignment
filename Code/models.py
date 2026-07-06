@@ -189,3 +189,72 @@ class ResNet18(nn.Module):
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
         return self.classifier(out) #fix: added return statement to ensure the output of the classifier is returned
+
+
+# ==========================================
+# PART 3: TRANSFER LEARNING ARCHITECTURES
+# ==========================================
+
+class FrozenTransferResNet18(nn.Module):
+    """Transfer Learning: ALL feature layers frozen, only classifier is trained.
+    Best for extremely small datasets (<500 samples)."""
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        import torchvision.models as tv_models
+
+        # Download pretrained ImageNet weights
+        backbone = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
+
+        # Handle grayscale (1-channel) input
+        if in_channels != 3:
+            old_conv = backbone.conv1
+            new_conv = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            new_conv.weight.data = old_conv.weight.data.mean(dim=1, keepdim=True)
+            backbone.conv1 = new_conv
+
+        # FREEZE every single parameter
+        for param in backbone.parameters():
+            param.requires_grad = False
+
+        # Replace the final classifier (this IS trainable)
+        in_features = backbone.fc.in_features
+        backbone.fc = nn.Linear(in_features, num_classes)
+
+        self.model = backbone
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class FineTunedTransferResNet18(nn.Module):
+    """Transfer Learning: Early layers frozen, Stage 4 + classifier unfrozen.
+    Best for small datasets (500-5000 samples)."""
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        import torchvision.models as tv_models
+
+        backbone = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
+
+        # Handle grayscale input
+        if in_channels != 3:
+            old_conv = backbone.conv1
+            new_conv = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            new_conv.weight.data = old_conv.weight.data.mean(dim=1, keepdim=True)
+            backbone.conv1 = new_conv
+
+        # Step 1: Freeze ALL layers first
+        for param in backbone.parameters():
+            param.requires_grad = False
+
+        # Step 2: UNFREEZE Stage 4 only
+        for param in backbone.layer4.parameters():
+            param.requires_grad = True
+
+        # Step 3: Replace classifier (unfrozen by default)
+        in_features = backbone.fc.in_features
+        backbone.fc = nn.Linear(in_features, num_classes)
+
+        self.model = backbone
+
+    def forward(self, x):
+        return self.model(x)
