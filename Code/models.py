@@ -136,6 +136,7 @@ class VGG16(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
+        x = self.avgpool(x)  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         x = torch.flatten(x, 1)
         return self.classifier(x)
 
