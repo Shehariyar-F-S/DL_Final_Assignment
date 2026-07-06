@@ -30,7 +30,7 @@ def main():
             channels = dataset_config["CHANNELS"]
             num_classes = dataset_config["NUM_CLASSES"] # enhancement:added the configuration for the model to use.
 
-            train_loader, val_loader, test_loader = get_loaders(data=config["DATA"],  # fix: fixed syntax error for var test_loader
+            train_loader, val_loader, test_loader = get_loaders(data=data_name,  # fix: fixed syntax error for var test_loader #fix: corrected the data parameter
                                                         data_path=config["DATA_PATH"], 
                                                         batch_size=config["BATCH_SIZE"],
                                                         val_split=config.get("VAL_SPLIT", 0.1)) #added val_split
