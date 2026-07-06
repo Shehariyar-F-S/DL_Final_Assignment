@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support
 
 class Trainer:
-    def __init__(self, model, criterion, optimizer, device):
+    def __init__(self, model, criterion, optimizer, device, scheduler=None):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.scheduler = scheduler
 
     def train_one_epoch(self, dataloader):
         self.model.train()
@@ -82,6 +83,9 @@ class Trainer:
             train_losses.append(train_loss) #tracking the train loss for plotting
             val_losses.append(val_loss) #tracking the validation loss for plotting
 
+            if self.scheduler is not None:
+                self.scheduler.step(val_loss)  # Step the scheduler based on validation loss if provided
+
             #save the best model weights based on validation loss
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -105,6 +109,8 @@ class Trainer:
         if best_model_weights is not None:
             self.model.load_state_dict(best_model_weights)  # Load the best model weights
             print("Best model weights loaded based on final evaluation.")
+
+        self.plot_losses(train_losses, val_losses, dataset_name)  # Plot the training and validation losses after training
 
     def plot_losses(self, train_losses, val_losses, dataset_name):
         fig, ax = plt.subplots(figsize=(7, 3))
