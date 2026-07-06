@@ -66,7 +66,7 @@ class Trainer:
                 
         return running_loss / total, (correct / total) * 100
 
-    def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset"): # fix: added dataset_name parameter to the fit method for better logging
+    def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset", patience = 7): # fix: added dataset_name parameter to the fit method for better logging
         print("\n Starting Training Routine...")
         print("-" * 50)
 
@@ -74,6 +74,8 @@ class Trainer:
         best_model_weights = None  # Track the best model weights
 
         train_losses, val_losses = [], []
+
+        epochs_no_improve = 0
         
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader)
@@ -86,11 +88,19 @@ class Trainer:
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 best_model_weights = self.model.state_dict().copy()
+                epochs_no_improve = 0
+            else:
+                epochs_no_improve += 1 # as we are tracking the number of epochs without improvement in validation loss
             
             print(f"Epoch [{epoch+1:02d}/{epochs:02d}] | "
                   f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc:.2f}% | "
                   f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc:.2f}%")
-        
+            
+            # Early stopping condition
+            if epochs_no_improve >= patience:  
+                print(f"Early stopping Triggered after {patience} epochs without improvement.")
+                break #break the training loop if no improvement in validation loss for 'patience' epochs
+
         print("-" * 50)
         print("Training Complete!")
 
