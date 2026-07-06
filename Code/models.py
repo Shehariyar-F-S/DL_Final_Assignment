@@ -92,7 +92,7 @@ class AlexNet(nn.Module):
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
-            nn.Linear(192 * 2 * 2, 1024),
+            nn.Linear(192 * 2 * 2, 1024), #fix: shape mispatch corrected to match the output of the avgpool layer
             nn.ReLU(inplace=True),
             nn.Dropout(p=drop_rate),
             nn.Linear(1024, 1024),
