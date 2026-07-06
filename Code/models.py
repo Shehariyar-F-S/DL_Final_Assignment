@@ -97,7 +97,7 @@ class AlexNet(nn.Module):
             nn.Dropout(p=drop_rate),
             nn.Linear(1024, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(1024, 11),
+            nn.Linear(1024, num_classes)  # fix: changed the hardcoded output classes to num_classes for flexibility,
         )
 
     def forward(self, x):
