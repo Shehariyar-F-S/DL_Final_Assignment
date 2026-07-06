@@ -87,10 +87,12 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
-            nn.Linear(2048, 1024),
+            nn.Linear(192 * 2 * 2, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout(p=drop_rate),
             nn.Linear(1024, 1024),
@@ -100,6 +102,7 @@ class AlexNet(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
+        x= self.avgpool(x)  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         x = torch.flatten(x, 1)
         return self.classifier(x)
 
