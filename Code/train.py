@@ -37,7 +37,7 @@ def main():
 
             model_class = getattr(models, config["MODEL"])
             model = model_class(in_channels=channels, num_classes=num_classes).to(device) #fix: removed the 0.99 dropout and intialized the model with the correct number of input channels and classes
-            criterion = nn.CrossEntropyLoss()
+            criterion = nn.CrossEntropyLoss(label_smoothing=0.1)  # fix: added label smoothing to the loss function to improve generalization
             optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5,)  # fix: added a learning rate scheduler to reduce the learning rate on plateau
 
