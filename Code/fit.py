@@ -63,8 +63,6 @@ class Trainer:
 
         return running_loss / total, (correct / total) * 100, precision * 100, recall * 100, f1_score * 100
 
-                
-        return running_loss / total, (correct / total) * 100
 
     def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset", patience = 7): # fix: added dataset_name parameter to the fit method for better logging
         print("\n Starting Training Routine...")
@@ -103,6 +101,10 @@ class Trainer:
 
         print("-" * 50)
         print("Training Complete!")
+
+        if best_model_weights is not None:
+            self.model.load_state_dict(best_model_weights)  # Load the best model weights
+            print("Best model weights loaded based on final evaluation.")
 
     def plot_losses(self, train_losses, val_losses, dataset_name):
         fig, ax = plt.subplots(figsize=(7, 3))
