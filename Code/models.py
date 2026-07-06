@@ -121,6 +121,8 @@ class VGG16(nn.Module):
             VGGBlock(256, 512, num_convs=3),
             VGGBlock(512, 512, num_convs=3)
         )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         
         self.classifier = nn.Sequential(
             nn.Linear(2048, 1024),
