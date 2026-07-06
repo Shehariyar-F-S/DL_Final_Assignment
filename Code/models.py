@@ -198,10 +198,10 @@ class DepthwiseSeparableConv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         super().__init__()
         # 1. Depthwise Convolution (groups=in_channels)
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_channels, bias=False)
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_channels)
 
         # 2. Pointwise Convolution (1x1))
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         # self.bn = nn.BatchNorm2d(out_channels)
         # self.activation = nn.ReLU(inplace=True)
 
@@ -229,7 +229,7 @@ class GreenResBlock(nn.Module):
         self.shortcut = nn.Identity()
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
                 nn.BatchNorm2d(out_channels)
             )
 
@@ -251,7 +251,7 @@ class GreenResNet18(nn.Module):
         activation = getattr(nn, activation_str)
 
         # Start with 32 channels instead of 64
-        self.conv1 = DepthwiseSeparableConv(in_channels, 32, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = DepthwiseSeparableConv(in_channels, 32, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(32)
         self.activation = activation(inplace=True)
         
