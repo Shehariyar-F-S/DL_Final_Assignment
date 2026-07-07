@@ -11,6 +11,26 @@ import torch.optim as optim
 from data import get_loaders
 import models
 from fit import Trainer
+import torch.nn.utils.prune as prune
+
+def apply_pruning(model, amount=0.3):
+    """Zero out the weakest weights in every Conv layer."""
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            prune.l1_unstructured(module, name='weight', amount=amount)
+    print(f"\n[GREEN] Pruning done: weakest {int(amount * 100)}% of weights zeroed out.")
+    return model
+    
+def remove_pruning_masks(model):
+    """Make the pruning permanent by baking the zeros into the weights."""
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            try:
+                prune.remove(module, 'weight')
+            except ValueError:
+                pass
+    print("[GREEN] Pruning is now permanent.")
+    return model
 
 def main():   
     with open("config.json", "r") as f:
@@ -43,7 +63,21 @@ def main():
 
 
             trainer = Trainer(model, criterion, optimizer, device, scheduler)
-            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name, )  # fix: added dataset_name parameter to the fit method for better logging
+            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)  # fix: added dataset_name parameter to the fit method for better logging
+
+            # Pruning: only for GreenResNet18
+            if model_name == "GreenResNet18":
+                # Step 1: Prune the weakest 30% of weights
+                model = apply_pruning(model, amount=config.get("PRUNE_AMOUNT", 0.3))
+                # Step 2: Fine-tune to recover accuracy
+                finetune_epochs = config.get("FINETUNE_EPOCHS", 5)
+                print(f"[GREEN] Fine-tuning for {finetune_epochs} epochs to recover accuracy...")
+                fine_optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"] * 0.1)
+                fine_scheduler = optim.lr_scheduler.ReduceLROnPlateau(fine_optimizer, mode='min', patience=3, factor=0.5)
+                fine_trainer = Trainer(model, criterion, fine_optimizer, device, fine_scheduler)
+                fine_trainer.fit(train_loader, val_loader, epochs=finetune_epochs, dataset_name=f"{data_name}_finetuned")
+                # Step 3: Make pruning permanent
+                model = remove_pruning_masks(model)
 
             test_loss, test_accuracy, precision, recall, f1_score, test_latency = trainer.evaluate(test_loader)
             print(f"\n{'='*50}")

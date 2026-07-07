@@ -21,7 +21,8 @@ class VGGBlock(nn.Module):
         for i in range(num_convs):
             is_config_c_tail = (num_convs == 3 and i == 2)
             kernel_size = 1 if is_config_c_tail else 3
-            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=padding))
+            actual_padding==0 if kernel_size==1 else padding
+            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=actual_padding))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU(inplace=True))
             current_in_channels = out_channels #fix: Update in_channels for the next layer
@@ -193,86 +194,36 @@ class ResNet18(nn.Module):
 
 ### Part 2: The Green Initiative Architecture
 
-class DepthwiseSeparableConv(nn.Module):
-    """Green Initiative: Replaces standard Conv2d to drastically reduce parameters."""
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
-        super().__init__()
-        # 1. Depthwise Convolution (groups=in_channels)
-        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=stride, padding=padding, groups=in_channels)
-
-        # 2. Pointwise Convolution (1x1))
-        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        # self.bn = nn.BatchNorm2d(out_channels)
-        # self.activation = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        out = self.depthwise(x)
-        out = self.pointwise(out)
-        return out
-    
-
-class GreenResBlock(nn.Module):
-    """ResBlock using Depthwise Separable Convolutions."""
-    def __init__(self, in_channels, out_channels, activation, stride=1):
-        super().__init__()
-        self.activation = activation
-
-        # Green Convolution 1
-        self.conv1 = DepthwiseSeparableConv(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        
-        # Green Convolution 2
-        self.conv2 = DepthwiseSeparableConv(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(out_channels)
-
-        # Standard 1 x1 convolution for the shortcut connection if needed
-        self.shortcut = nn.Identity()
-        if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
-                nn.BatchNorm2d(out_channels)
-            )
-
-    def forward(self, x):
-        identity = self.shortcut(x)
-        out = self.activation(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += identity  
-        out = self.activation(out)
-        return out
-    
-
-
 class GreenResNet18(nn.Module):
-    """GreenNet implementation of ResNet18."""
+    """Half-width ResNet18. Pruning (applied in train.py) makes it Green."""
     def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
 
         activation = getattr(nn, activation_str)
 
-        # Start with 32 channels instead of 64
-        self.conv1 = DepthwiseSeparableConv(in_channels, 32, kernel_size=3, stride=1, padding=1)
+        # Standard conv but starting at 32 channels instead of 64
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
         self.activation = activation(inplace=True)
-        
-        # Using GreenResBlocks instead of Standard ResBlocks! (channels halved: 32 -> 64 -> 128 -> 256 )
+
+        # Same ResBlocks as ResNet18, but channels are halved: 32->64->128->256
         self.stage1 = nn.Sequential(
-            GreenResBlock(32, 32, activation(inplace=True), stride=1),
-            GreenResBlock(32, 32, activation(inplace=True), stride=1)
+            ResBlock(32, 32, activation(inplace=True), stride=1),
+            ResBlock(32, 32, activation(inplace=True), stride=1)
         )
         self.stage2 = nn.Sequential(
-            GreenResBlock(32, 64, activation(inplace=True), stride=2),          
-            GreenResBlock(64, 64, activation(inplace=True), stride=1)
+            ResBlock(32, 64, activation(inplace=True), stride=2),
+            ResBlock(64, 64, activation(inplace=True), stride=1)
         )
         self.stage3 = nn.Sequential(
-            GreenResBlock(64, 128, activation(inplace=True), stride=2),
-            GreenResBlock(128, 128, activation(inplace=True), stride=1)
+            ResBlock(64, 128, activation(inplace=True), stride=2),
+            ResBlock(128, 128, activation(inplace=True), stride=1)
         )
         self.stage4 = nn.Sequential(
-            GreenResBlock(128, 256, activation(inplace=True), stride=2),
-            GreenResBlock(256, 256, activation(inplace=True), stride=1)
+            ResBlock(128, 256, activation(inplace=True), stride=2),
+            ResBlock(256, 256, activation(inplace=True), stride=1)
         )
-        
+
         drop_rate = kwargs.get("drop_rate", 0.3)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = nn.Sequential(
