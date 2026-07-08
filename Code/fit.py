@@ -100,9 +100,18 @@ class Trainer:
         total_start_time = time.time()  # Start time for the entire training process
         if self.device.type == 'cuda':
             torch.cuda.reset_peak_memory_stats(self.device) 
+        # ---New tracker to prevent evaluate from wiping training memory ---
+        max_train_memory_mb = 0.0 
         
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader)
+
+            # --- FIXED: Capture training peak BEFORE evaluate() wipes it ---
+            if self.device.type == 'cuda':
+                epoch_train_mem = torch.cuda.max_memory_allocated(self.device) / (1024 * 1024)
+                if epoch_train_mem > max_train_memory_mb:
+                    max_train_memory_mb = epoch_train_mem
+                    
             val_loss, val_acc, val_prec, val_rec, val_f1, inf_latency_ms, val_inf_mem_mb = self.evaluate(val_loader)
 
             train_losses.append(train_loss) #tracking the train loss for plotting
@@ -130,9 +139,7 @@ class Trainer:
         
         # stop master timer and calculate total runtime and peak memory usage
         total_runtime = time.time() - total_start_time
-        peak_memory_mb = 0.0
-        if self.device.type == 'cuda':
-            peak_memory_mb = torch.cuda.max_memory_allocated(self.device) / (1024 * 1024)  # Convert bytes to MB
+        peak_memory_mb = max_train_memory_mb
 
         print("\n [Green Initiative Efficiency Matrix]")
         print(f"Total Runtime: {total_runtime:.2f} seconds")
