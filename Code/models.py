@@ -21,7 +21,7 @@ class VGGBlock(nn.Module):
         for i in range(num_convs):
             is_config_c_tail = (num_convs == 3 and i == 2)
             kernel_size = 1 if is_config_c_tail else 3
-            actual_padding==0 if kernel_size==1 else padding
+            actual_padding=0 if kernel_size==1 else padding
             layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=actual_padding))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU(inplace=True))
