@@ -39,13 +39,16 @@ def main():
             model = model_class(in_channels=channels, num_classes=num_classes).to(device) #fix: removed the 0.99 dropout and intialized the model with the correct number of input channels and classes
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5,)  # fix: added a learning rate scheduler to reduce the learning rate on plateau
 
-            trainer = Trainer(model, criterion, optimizer, device)
-            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)  # fix: added dataset_name parameter to the fit method for better logging
+
+            trainer = Trainer(model, criterion, optimizer, device, scheduler)
+            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name, )  # fix: added dataset_name parameter to the fit method for better logging
 
             test_loss, test_accuracy, precision, recall, f1_score = trainer.evaluate(test_loader)
             print(f"\n{'='*50}")
             print(f"Model: {model_name} | Dataset: {data_name}")
+            print(f"Test Loss: {test_loss:.4f}")
             print(f"Test Accuracy: {test_accuracy:.2f}%")
             print(f"Precision: {precision:.2f}%")
             print(f"Recall: {recall:.2f}%")

@@ -6,6 +6,7 @@ MG 6/6/2026
 import torch
 from pathlib import Path
 from torch.utils.data import TensorDataset, DataLoader
+import torchvision.transforms as T
 
 def get_loaders(data, data_path, batch_size, val_split=0.1):
     d_path = Path(data_path) / f"{data}.pt"   # fixed path to load the data from the correct directory
@@ -39,9 +40,6 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
         if len(x.shape) == 3:  # If single channel, add channel dimension
             x = x.unsqueeze(1)  # Add channel dimension for grayscale images
 
-        if x.shape[-1] < 32 or x.shape[-2] < 32:  # If images are smaller than 32x32, resize them
-            x = torch.nn.functional.interpolate(x, size=(32, 32), mode='bilinear', align_corners=False)
-
         y = y.squeeze().long()
         return x, y
     
@@ -50,9 +48,28 @@ def get_loaders(data, data_path, batch_size, val_split=0.1):
     val_data, val_labels = preprocess(val_data, val_labels)
     test_data, test_labels = preprocess(test_data, test_labels)
     
-    train_dataset = TensorDataset(train_data, train_labels)
+    class AugmentedDataset(torch.utils.data.Dataset):
+    
+        def __init__(self, images, labels):
+            self.images = images
+            self.labels = labels
+            self.transform = T.Compose([
+                T.RandomHorizontalFlip(p=0.5),
+                T.RandomRotation(degrees=15),
+                T.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+            ])
+        
+        def __len__(self):
+            return len(self.images)
+        
+        def __getitem__(self, idx):
+            image = self.transform(self.images[idx])
+            return image, self.labels[idx]
+    
+    train_dataset = AugmentedDataset(train_data, train_labels)
     val_dataset = TensorDataset(val_data, val_labels)
-    test_dataset = TensorDataset(test_data, test_labels) # fix: added the test dataset to be returned for consistency
+    test_dataset = TensorDataset(test_data, test_labels)
+
     
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)

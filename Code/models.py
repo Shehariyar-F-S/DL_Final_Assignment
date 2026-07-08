@@ -21,7 +21,10 @@ class VGGBlock(nn.Module):
         for i in range(num_convs):
             is_config_c_tail = (num_convs == 3 and i == 2)
             kernel_size = 1 if is_config_c_tail else 3
-            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=padding))
+
+            actual_padding = 0 if kernel_size == 1 else padding
+
+            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=actual_padding))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU(inplace=True))
             current_in_channels = out_channels #fix: Update in_channels for the next layer
@@ -63,13 +66,13 @@ class ResBlock(nn.Module):
 
 class AlexNet(nn.Module):
     """AlexNet (Krizhevsky et al., 2012) adapted for smaller inputs."""
-    def __init__(self, **kwargs):
+    def __init__(self, in_channels, num_classes, **kwargs): #fix:added the missing arguments in_channels and num_classes.
         super().__init__()
 
         drop_rate = kwargs.get("drop_rate", 0.5)
         
         self.features = nn.Sequential(
-            nn.Conv2d(3, 48, kernel_size=7, stride=2, padding=3),
+            nn.Conv2d(in_channels, 48, kernel_size=7, stride=2, padding=3), # fix: changed the hardcoded input channels to in_channels for flexibility
             nn.BatchNorm2d(48),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
@@ -87,19 +90,22 @@ class AlexNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
-            nn.Linear(2048, 1024),
+            nn.Linear(192 * 2 * 2, 1024), #fix: shape mispatch corrected to match the output of the avgpool layer
             nn.ReLU(inplace=True),
             nn.Dropout(p=drop_rate),
             nn.Linear(1024, 1024),
             nn.ReLU(inplace=True),
-            nn.Linear(1024, 11),
+            nn.Linear(1024, num_classes)  # fix: changed the hardcoded output classes to num_classes for flexibility,
         )
 
     def forward(self, x):
         x = self.features(x)
+        x= self.avgpool(x)  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         x = torch.flatten(x, 1)
         return self.classifier(x)
 
@@ -118,6 +124,8 @@ class VGG16(nn.Module):
             VGGBlock(256, 512, num_convs=3),
             VGGBlock(512, 512, num_convs=3)
         )
+
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         
         self.classifier = nn.Sequential(
             nn.Linear(2048, 1024),
@@ -131,6 +139,7 @@ class VGG16(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
+        x = self.avgpool(x)  # fix: added adaptive average pooling to ensure consistent output size before the classifier
         x = torch.flatten(x, 1)
         return self.classifier(x)
 
@@ -167,8 +176,12 @@ class ResNet18(nn.Module):
             ResBlock(512, 512, activation(inplace=True), stride=1)
         )
         
+        drop_rate = kwargs.get("drop_rate", 0.5)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.classifier = nn.Linear(512, num_classes)
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, num_classes)
+        )
 
     def forward(self, x):
         out = self.activation(self.bn1(self.conv1(x)))
