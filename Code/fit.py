@@ -7,6 +7,7 @@ import torch
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support
 import time
+import tracemalloc
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, scheduler=None):
@@ -47,6 +48,12 @@ class Trainer:
         all_preds = []
 
         inf_start_time = time.time()  # Start time for evaluation
+
+        # --- Memory Tracking Start ---
+        if self.device.type == 'cuda':
+            torch.cuda.reset_peak_memory_stats(self.device)
+        else:
+            tracemalloc.start()
         
         with torch.no_grad():
             for images, labels in dataloader:
@@ -65,9 +72,18 @@ class Trainer:
 
             inf_latency_ms = ((time.time() - inf_start_time) / total) * 1000  # Calculate average inference latency in milliseconds
 
+        # --- Memory Tracking End ---
+        inf_mem_mb = 0.0
+        if self.device.type == 'cuda':
+            inf_mem_mb = torch.cuda.max_memory_allocated(self.device) / (1024 * 1024)
+        else:
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            inf_mem_mb = peak / (1024 * 1024)
+        
         precision, recall, f1_score, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro', zero_division=0) # fix: added precision, recall, and f1_score calculations for better evaluation metrics
-
-        return running_loss / total, (correct / total) * 100, precision * 100, recall * 100, f1_score * 100, inf_latency_ms  # Return the average inference latency along with other metrics
+        
+        return running_loss / total, (correct / total) * 100, precision * 100, recall * 100, f1_score * 100, inf_latency_ms, inf_mem_mb  # Return the average inference latency along with other metrics
 
 
     def fit(self, train_loader, val_loader, epochs, dataset_name = "dataset", patience = 7): # fix: added dataset_name parameter to the fit method for better logging
@@ -87,7 +103,7 @@ class Trainer:
         
         for epoch in range(epochs):
             train_loss, train_acc = self.train_one_epoch(train_loader)
-            val_loss, val_acc, val_prec, val_rec, val_f1, inf_latency_ms = self.evaluate(val_loader)
+            val_loss, val_acc, val_prec, val_rec, val_f1, inf_latency_ms, val_inf_mem_mb = self.evaluate(val_loader)
 
             train_losses.append(train_loss) #tracking the train loss for plotting
             val_losses.append(val_loss) #tracking the validation loss for plotting
@@ -122,6 +138,7 @@ class Trainer:
         print(f"Total Runtime: {total_runtime:.2f} seconds")
         print(f" Inference Latency: {inf_latency_ms:.4f} ms per sample")
         print(f"Peak Memory Usage: {peak_memory_mb:.2f} MB")
+        print(f"Peak Inference Memory Usage: {val_inf_mem_mb:.2f} MB")
 
         print("-" * 50)
         print("Training Complete!")
