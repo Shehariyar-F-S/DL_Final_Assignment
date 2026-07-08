@@ -5,6 +5,7 @@ MG 6/6/2026
 """
 import torch
 import torch.nn as nn
+import os
 
 activation_str = "ReLU"  # Placeholder for activation function, can be replaced with "ReLU" or others as needed.
 
@@ -21,7 +22,8 @@ class VGGBlock(nn.Module):
         for i in range(num_convs):
             is_config_c_tail = (num_convs == 3 and i == 2)
             kernel_size = 1 if is_config_c_tail else 3
-            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=padding))
+            actual_padding = 0 if kernel_size == 1 else padding
+            layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=actual_padding))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU(inplace=True))
             current_in_channels = out_channels #fix: Update in_channels for the next layer
@@ -190,71 +192,65 @@ class ResNet18(nn.Module):
         out = torch.flatten(out, 1)
         return self.classifier(out) #fix: added return statement to ensure the output of the classifier is returned
 
-
-# ==========================================
-# PART 3: TRANSFER LEARNING ARCHITECTURES
-# ==========================================
-
+# =============================================================================
+# Part 3: Transfer Learning Architectures
+# =============================================================================
 class FrozenTransferResNet18(nn.Module):
-    """Transfer Learning: ALL feature layers frozen, only classifier is trained.
-    Best for extremely small datasets (<500 samples)."""
+    """Transfer Learning Benchmark B: All Convolutional Layers Frozen."""
     def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
-        import torchvision.models as tv_models
+        
+        # 1. Instantiate OUR custom base model with the ORIGINAL 'orgs' configuration (11 classes)
+        self.base_model = ResNet18(in_channels=1, num_classes=11) 
+        
+        # 2. Load our custom medical weights!
+        weights_path = "orgs_pretrained_resnet18.pth"
+        if os.path.exists(weights_path):
+            self.base_model.load_state_dict(torch.load(weights_path))
+            print(f"[TRANSFER] Successfully loaded pre-trained weights from {weights_path}")
+        else:
+            print(f"[WARNING] Pre-trained weights {weights_path} not found! You must run 'orgs' first.")
 
-        # Download pretrained ImageNet weights
-        backbone = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
-
-        # Handle grayscale (1-channel) input
-        if in_channels != 3:
-            old_conv = backbone.conv1
-            new_conv = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-            new_conv.weight.data = old_conv.weight.data.mean(dim=1, keepdim=True)
-            backbone.conv1 = new_conv
-
-        # FREEZE every single parameter
-        for param in backbone.parameters():
+        # 3. FREEZE the entire convolutional body
+        for param in self.base_model.parameters():
             param.requires_grad = False
-
-        # Replace the final classifier (this IS trainable)
-        in_features = backbone.fc.in_features
-        backbone.fc = nn.Linear(in_features, num_classes)
-
-        self.model = backbone
-
+            
+        # 4. Swap the classification head for the new 'organs' dataset
+        drop_rate = kwargs.get("drop_rate", 0.5)
+        self.base_model.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, num_classes)
+        )
+        
     def forward(self, x):
-        return self.model(x)
-
+        return self.base_model(x)
 
 class FineTunedTransferResNet18(nn.Module):
-    """Transfer Learning: Early layers frozen, Stage 4 + classifier unfrozen.
-    Best for small datasets (500-5000 samples)."""
+    """Transfer Learning Benchmark C: Stage 4 Unfrozen (Partial Fine-Tuning)."""
     def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
-        import torchvision.models as tv_models
+        
+        self.base_model = ResNet18(in_channels=1, num_classes=11) 
+        
+        weights_path = "orgs_pretrained_resnet18.pth"
+        if os.path.exists(weights_path):
+            self.base_model.load_state_dict(torch.load(weights_path))
+            print(f"[TRANSFER] Successfully loaded pre-trained weights from {weights_path}")
 
-        backbone = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
-
-        # Handle grayscale input
-        if in_channels != 3:
-            old_conv = backbone.conv1
-            new_conv = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-            new_conv.weight.data = old_conv.weight.data.mean(dim=1, keepdim=True)
-            backbone.conv1 = new_conv
-
-        # Step 1: Freeze ALL layers first
-        for param in backbone.parameters():
+        # 1. Freeze everything first
+        for param in self.base_model.parameters():
             param.requires_grad = False
-
-        # Step 2: UNFREEZE Stage 4 only
-        for param in backbone.layer4.parameters():
+            
+        # 2. UNFREEZE ONLY STAGE 4
+        for param in self.base_model.stage4.parameters():
             param.requires_grad = True
-
-        # Step 3: Replace classifier (unfrozen by default)
-        in_features = backbone.fc.in_features
-        backbone.fc = nn.Linear(in_features, num_classes)
-
-        self.model = backbone
-
+            
+        # 3. Swap the head
+        drop_rate = kwargs.get("drop_rate", 0.5)
+        self.base_model.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, num_classes)
+        )
+        
     def forward(self, x):
-        return self.model(x)
+        return self.base_model(x)
