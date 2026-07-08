@@ -65,8 +65,8 @@ def main():
             trainer = Trainer(model, criterion, optimizer, device, scheduler)
             trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)  # fix: added dataset_name parameter to the fit method for better logging
 
-            # Pruning: only for GreenResNet18
-            if model_name == "GreenResNet18":
+            # Pruning: for both Green Initiative models
+            if model_name in ("GreenResNet18", "GreenVGG16"):
                 # Step 1: Prune the weakest 30% of weights
                 model = apply_pruning(model, amount=config.get("PRUNE_AMOUNT", 0.3))
                 # Step 2: Fine-tune to recover accuracy
