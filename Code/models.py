@@ -240,3 +240,36 @@ class GreenResNet18(nn.Module):
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
         return self.classifier(out)
+
+class GreenVGG16(nn.Module):
+    """Half-width VGG16 for the Green Initiative.
+    
+    Channel dimensions halved: 64→32, 128→64, 256→128, 512→256, 512→256
+    FC layers halved: 2048→1024→512 becomes 1024→512→256
+    This cuts parameters by ~75% for energy-efficient deployment.
+    """
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        drop_rate = kwargs.get("drop_rate", 0.5)
+        self.features = nn.Sequential(
+            VGGBlock(in_channels, 32,  num_convs=2),   # was 64
+            VGGBlock(32,          64,  num_convs=2),   # was 128
+            VGGBlock(64,          128, num_convs=3),   # was 256
+            VGGBlock(128,         256, num_convs=3),   # was 512
+            VGGBlock(256,         256, num_convs=3)    # was 512
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))
+        self.classifier = nn.Sequential(
+            nn.Linear(256 * 2 * 2, 512),   # was 2048 → 1024
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, 256),            # was 1024 → 512
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=drop_rate),
+            nn.Linear(256, num_classes)     # was 512 → num_classes
+        )
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
