@@ -43,7 +43,7 @@
 | 8 | `fit.py` | Added early stopping with configurable `patience` parameter | Prevents unnecessary computation when validation loss stagnates | `759d47c`, `0dba4da` |
 | 9 | `fit.py` | Added `dataset_name` parameter to `fit()` for labelled loss curve saving | Enables per-dataset loss curves for benchmark comparison | `c9f803f` |
 | 10 | `train.py` | Added configuration-driven model loading via `getattr(models, model_name)` | All three models run via single `config.json` — satisfies modularity requirement | `bd1cd98` |
-| 11 | `train.py` | Added detailed per-permutation print logs for all evaluation metrics | Clear visibility of Accuracy, Precision, Recall, F1 per model-dataset combination | `a45097f` |
+| 11 | `train.py` | Added detailed print logs for all evaluation metrics | Clear visibility of Accuracy, Precision, Recall, F1 per model-dataset combination | `a45097f` |
 | 12 | `config.json` | Created complete configuration file from scratch | Centralises all hyperparameters. Enables full pipeline execution without manual code edits | `818d8ec`, `fc0fd07` |
 
 ---
