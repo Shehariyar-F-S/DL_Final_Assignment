@@ -79,7 +79,7 @@ def main():
                 # Step 3: Make pruning permanent
                 model = remove_pruning_masks(model)
 
-            test_loss, test_accuracy, precision, recall, f1_score, test_latency = trainer.evaluate(test_loader)
+            test_loss, test_accuracy, precision, recall, f1_score, test_latency, test_inf_mem = trainer.evaluate(test_loader)
             print(f"\n{'='*50}")
             print(f"Model: {model_name} | Dataset: {data_name}")
             print(f"Test Loss: {test_loss:.4f}")
@@ -88,6 +88,7 @@ def main():
             print(f"Recall: {recall:.2f}%")
             print(f"F1-Score: {f1_score:.2f}%")
             print(f" Latency: {test_latency:.4f} ms/ sample")
+            print(f" Inference Memory: {test_inf_mem:.2f} MB")
             print(f"{'='*50}")
 
 if __name__ == "__main__":
