@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support
 import time
 import tracemalloc
+import copy
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, scheduler=None):
@@ -123,7 +124,7 @@ class Trainer:
             #save the best model weights based on validation loss
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                best_model_weights = self.model.state_dict().copy()
+                best_model_weights = copy.deepcopy(self.model.state_dict())
                 epochs_no_improve = 0
             else:
                 epochs_no_improve += 1 # as we are tracking the number of epochs without improvement in validation loss
