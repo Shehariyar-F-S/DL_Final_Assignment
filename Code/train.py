@@ -25,7 +25,7 @@ def run_organs_benchmark(config, device, train_loader, val_loader, test_loader, 
     """
 
     criterion = nn.CrossEntropyLoss()
-    def train_and_eval(model, name):
+def train_and_eval(model, name):
         """Helper to train any model and return its 5 evaluate metrics"""
         # filter(lambda p: p.requires_grad) ensures the optimizer ignores frozen layers
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["LEARNING_RATE"])
@@ -65,7 +65,6 @@ def run_organs_benchmark(config, device, train_loader, val_loader, test_loader, 
     print(f"{'F1-Score':<18} {a_f1:>14.2f}% {b_f1:>17.2f}% {c_f1:>19.2f}%")
     print(f"{'Test Loss':<18} {a_loss:>15.4f} {b_loss:>18.4f} {c_loss:>20.4f}")
     print("="*75)
-
 
 def main():   
     with open("config.json", "r") as f:
