@@ -21,9 +21,7 @@ class VGGBlock(nn.Module):
         for i in range(num_convs):
             is_config_c_tail = (num_convs == 3 and i == 2)
             kernel_size = 1 if is_config_c_tail else 3
-
-            actual_padding = 0 if kernel_size == 1 else padding
-
+            actual_padding=0 if kernel_size==1 else padding
             layers.append(nn.Conv2d(current_in_channels, out_channels, kernel_size=kernel_size, padding=actual_padding))
             layers.append(nn.BatchNorm2d(out_channels))
             layers.append(nn.ReLU(inplace=True))
@@ -192,3 +190,86 @@ class ResNet18(nn.Module):
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
         return self.classifier(out) #fix: added return statement to ensure the output of the classifier is returned
+
+
+### Part 2: The Green Initiative Architecture
+
+class GreenResNet18(nn.Module):
+    """Half-width ResNet18. Pruning (applied in train.py) makes it Green."""
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+
+        activation = getattr(nn, activation_str)
+
+        # Standard conv but starting at 32 channels instead of 64
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.activation = activation(inplace=True)
+
+        # Same ResBlocks as ResNet18, but channels are halved: 32->64->128->256
+        self.stage1 = nn.Sequential(
+            ResBlock(32, 32, activation(inplace=True), stride=1),
+            ResBlock(32, 32, activation(inplace=True), stride=1)
+        )
+        self.stage2 = nn.Sequential(
+            ResBlock(32, 64, activation(inplace=True), stride=2),
+            ResBlock(64, 64, activation(inplace=True), stride=1)
+        )
+        self.stage3 = nn.Sequential(
+            ResBlock(64, 128, activation(inplace=True), stride=2),
+            ResBlock(128, 128, activation(inplace=True), stride=1)
+        )
+        self.stage4 = nn.Sequential(
+            ResBlock(128, 256, activation(inplace=True), stride=2),
+            ResBlock(256, 256, activation(inplace=True), stride=1)
+        )
+
+        drop_rate = kwargs.get("drop_rate", 0.3)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(256, num_classes)
+        )
+
+    def forward(self, x):
+        out = self.activation(self.bn1(self.conv1(x)))
+        out = self.stage1(out)
+        out = self.stage2(out)
+        out = self.stage3(out)
+        out = self.stage4(out)
+        out = self.avgpool(out)
+        out = torch.flatten(out, 1)
+        return self.classifier(out)
+
+class GreenVGG16(nn.Module):
+    """Half-width VGG16 for the Green Initiative.
+    
+    Channel dimensions halved: 64→32, 128→64, 256→128, 512→256, 512→256
+    FC layers halved: 2048→1024→512 becomes 1024→512→256
+    This cuts parameters by ~75% for energy-efficient deployment.
+    """
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        drop_rate = kwargs.get("drop_rate", 0.5)
+        self.features = nn.Sequential(
+            VGGBlock(in_channels, 32,  num_convs=2),   # was 64
+            VGGBlock(32,          64,  num_convs=2),   # was 128
+            VGGBlock(64,          128, num_convs=3),   # was 256
+            VGGBlock(128,         256, num_convs=3),   # was 512
+            VGGBlock(256,         256, num_convs=3)    # was 512
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))
+        self.classifier = nn.Sequential(
+            nn.Linear(256 * 2 * 2, 512),   # was 2048 → 1024
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, 256),            # was 1024 → 512
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=drop_rate),
+            nn.Linear(256, num_classes)     # was 512 → num_classes
+        )
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
