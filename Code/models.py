@@ -192,65 +192,61 @@ class ResNet18(nn.Module):
         out = torch.flatten(out, 1)
         return self.classifier(out) #fix: added return statement to ensure the output of the classifier is returned
 
-# =============================================================================
-# Part 3: Transfer Learning Architectures
-# =============================================================================
+# ==========================================
+# PART 3: TRANSFER LEARNING ARCHITECTURES
+# ==========================================
+
 class FrozenTransferResNet18(nn.Module):
-    """Transfer Learning Benchmark B: All Convolutional Layers Frozen."""
+    """Transfer Learning: ALL Conv layers frozen, only classifier trains."""
     def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
         
-        # 1. Instantiate OUR custom base model with the ORIGINAL 'orgs' configuration (11 classes)
-        self.base_model = ResNet18(in_channels=1, num_classes=11) 
+        # 1. Build the base model and load the orgs weights
+        backbone = ResNet18(in_channels=in_channels, num_classes=11) # 11 = orgs
+        backbone.load_state_dict(torch.load("orgs_pretrained_resnet18.pth", map_location="cpu"))
         
-        # 2. Load our custom medical weights!
-        weights_path = "orgs_pretrained_resnet18.pth"
-        if os.path.exists(weights_path):
-            self.base_model.load_state_dict(torch.load(weights_path))
-            print(f"[TRANSFER] Successfully loaded pre-trained weights from {weights_path}")
-        else:
-            print(f"[WARNING] Pre-trained weights {weights_path} not found! You must run 'orgs' first.")
-
-        # 3. FREEZE the entire convolutional body
-        for param in self.base_model.parameters():
+        # 2. Freeze ALL layers
+        for param in backbone.parameters():
             param.requires_grad = False
             
-        # 4. Swap the classification head for the new 'organs' dataset
-        drop_rate = kwargs.get("drop_rate", 0.5)
-        self.base_model.classifier = nn.Sequential(
+        # 3. Replace the classifier (new layers are automatically unfrozen)
+        drop_rate = kwargs.get("drop_rate", 0.3)
+        backbone.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
             nn.Linear(512, num_classes)
         )
         
+        self.model = backbone
+
     def forward(self, x):
-        return self.base_model(x)
+        return self.model(x)
+
 
 class FineTunedTransferResNet18(nn.Module):
-    """Transfer Learning Benchmark C: Stage 4 Unfrozen (Partial Fine-Tuning)."""
+    """Transfer Learning: Stages 1-3 frozen, Stage 4 unfrozen."""
     def __init__(self, in_channels, num_classes, **kwargs):
         super().__init__()
         
-        self.base_model = ResNet18(in_channels=1, num_classes=11) 
+        # 1. Build the base model and load the orgs weights
+        backbone = ResNet18(in_channels=in_channels, num_classes=11)
+        backbone.load_state_dict(torch.load("orgs_pretrained_resnet18.pth", map_location="cpu"))
         
-        weights_path = "orgs_pretrained_resnet18.pth"
-        if os.path.exists(weights_path):
-            self.base_model.load_state_dict(torch.load(weights_path))
-            print(f"[TRANSFER] Successfully loaded pre-trained weights from {weights_path}")
-
-        # 1. Freeze everything first
-        for param in self.base_model.parameters():
+        # 2. Freeze ALL layers first
+        for param in backbone.parameters():
             param.requires_grad = False
             
-        # 2. UNFREEZE ONLY STAGE 4
-        for param in self.base_model.stage4.parameters():
+        # 3. UNFREEZE Stage 4 (allow deep layers to flex)
+        for param in backbone.stage4.parameters():
             param.requires_grad = True
             
-        # 3. Swap the head
-        drop_rate = kwargs.get("drop_rate", 0.5)
-        self.base_model.classifier = nn.Sequential(
+        # 4. Replace the classifier
+        drop_rate = kwargs.get("drop_rate", 0.3)
+        backbone.classifier = nn.Sequential(
             nn.Dropout(p=drop_rate),
             nn.Linear(512, num_classes)
         )
         
+        self.model = backbone
+
     def forward(self, x):
-        return self.base_model(x)
+        return self.model(x)
