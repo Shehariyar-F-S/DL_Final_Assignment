@@ -28,34 +28,32 @@ def main():
         for dataset_config in config["DATASETS"]:
             data_name = dataset_config["DATA"]
             channels = dataset_config["CHANNELS"]
-            num_classes = dataset_config["NUM_CLASSES"]
+            num_classes = dataset_config["NUM_CLASSES"] # enhancement:added the configuration for the model to use.
 
-
-
-            train_loader, val_loader, test_loader = get_loaders( # fixed syntax error
-                data=data_name, 
-                data_path=config["DATA_PATH"], 
-                batch_size=config["BATCH_SIZE"], 
-                val_split=config.get("VAL_SPLIT", 0.1) # fixed syntax error
-            )
+            train_loader, val_loader, test_loader = get_loaders(data=data_name,  # fix: fixed syntax error for var test_loader #fix: corrected the data parameter
+                                                        data_path=config["DATA_PATH"], 
+                                                        batch_size=config["BATCH_SIZE"],
+                                                        val_split=config.get("VAL_SPLIT", 0.1)) #added val_split
 
             model_class = getattr(models, config["MODEL"])
-            model = model_class(in_channels=channels, num_classes=num_classes).to(device)
+            model = model_class(in_channels=channels, num_classes=num_classes).to(device) #fix: removed the 0.99 dropout and intialized the model with the correct number of input channels and classes
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.Adam(model.parameters(), lr=config["LEARNING_RATE"])
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5,)  # fix: added a learning rate scheduler to reduce the learning rate on plateau
 
-    
-            #remooved the dublicate model code for model, criterion and optimizer 
-            trainer = Trainer(model, criterion, optimizer, device)
-            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name)
+
+            trainer = Trainer(model, criterion, optimizer, device, scheduler)
+            trainer.fit(train_loader, val_loader, epochs=config["EPOCHS"], dataset_name=data_name, )  # fix: added dataset_name parameter to the fit method for better logging
 
             test_loss, test_accuracy, precision, recall, f1_score = trainer.evaluate(test_loader)
             print(f"\n{'='*50}")
             print(f"Model: {model_name} | Dataset: {data_name}")
+            print(f"Test Loss: {test_loss:.4f}")
             print(f"Test Accuracy: {test_accuracy:.2f}%")
             print(f"Precision: {precision:.2f}%")
             print(f"Recall: {recall:.2f}%")
             print(f"F1-Score: {f1_score:.2f}%")
             print(f"{'='*50}")
+
 if __name__ == "__main__":
     main()
