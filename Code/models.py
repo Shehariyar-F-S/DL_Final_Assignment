@@ -5,6 +5,7 @@ MG 6/6/2026
 """
 import torch
 import torch.nn as nn
+import os
 
 activation_str = "ReLU"  # Placeholder for activation function, can be replaced with "ReLU" or others as needed.
 
@@ -273,3 +274,61 @@ class GreenVGG16(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         return self.classifier(x)
+# ==========================================
+# PART 3: TRANSFER LEARNING ARCHITECTURES
+# ==========================================
+
+class FrozenTransferResNet18(nn.Module):
+    """Transfer Learning: ALL Conv layers frozen, only classifier trains."""
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        
+        # 1. Build the base model and load the orgs weights
+        backbone = ResNet18(in_channels=in_channels, num_classes=11) # 11 = orgs
+        backbone.load_state_dict(torch.load("orgs_pretrained_resnet18.pth", map_location="cpu"))
+        
+        # 2. Freeze ALL layers
+        for param in backbone.parameters():
+            param.requires_grad = False
+            
+        # 3. Replace the classifier (new layers are automatically unfrozen)
+        drop_rate = kwargs.get("drop_rate", 0.3)
+        backbone.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, num_classes)
+        )
+        
+        self.model = backbone
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class FineTunedTransferResNet18(nn.Module):
+    """Transfer Learning: Stages 1-3 frozen, Stage 4 unfrozen."""
+    def __init__(self, in_channels, num_classes, **kwargs):
+        super().__init__()
+        
+        # 1. Build the base model and load the orgs weights
+        backbone = ResNet18(in_channels=in_channels, num_classes=11)
+        backbone.load_state_dict(torch.load("orgs_pretrained_resnet18.pth", map_location="cpu"))
+        
+        # 2. Freeze ALL layers first
+        for param in backbone.parameters():
+            param.requires_grad = False
+            
+        # 3. UNFREEZE Stage 4 (allow deep layers to flex)
+        for param in backbone.stage4.parameters():
+            param.requires_grad = True
+            
+        # 4. Replace the classifier
+        drop_rate = kwargs.get("drop_rate", 0.3)
+        backbone.classifier = nn.Sequential(
+            nn.Dropout(p=drop_rate),
+            nn.Linear(512, num_classes)
+        )
+        
+        self.model = backbone
+
+    def forward(self, x):
+        return self.model(x)
