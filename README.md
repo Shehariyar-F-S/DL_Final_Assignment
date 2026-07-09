@@ -69,7 +69,7 @@ Place dataset files in `Data/` folder: `cells.pt`, `chest.pt`, `lesions.pt`, `or
 All parameters controlled via `Code/config.json`:
 ```json
 {
- "DATA_PATH": "../Data",
+ "DATA_PATH": "../data",
  "BATCH_SIZE": 64,
  "LEARNING_RATE": 0.0001,
  "EPOCHS": 20,
