@@ -26,5 +26,5 @@
             "NUM_CLASSES": 8
         }
     ],
-    "MODELS": ["ResNet18", "AlexNet", "VGG16", "GreenResNet18"]
+    "MODELS": ["GreenResNet18", "GreenVGG16","ResNet18", "AlexNet", "VGG16"]
 }
