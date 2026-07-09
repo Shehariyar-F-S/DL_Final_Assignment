@@ -4,8 +4,6 @@ MAI/IDL SS26 - Final assignment.
 MG 6/6/2026
 """
 import json
-from logging import config
-from xml.parsers.expat import model
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -23,9 +21,8 @@ def run_organs_benchmark(config, device, train_loader, val_loader, test_loader, 
       - Largest training set in our registry (15,367 samples)
       - Closest semantic domain (anatomical organ imaging)
     """
-
     criterion = nn.CrossEntropyLoss()
-def train_and_eval(model, name):
+    def train_and_eval(model, name):
         """Helper to train any model and return its 5 evaluate metrics"""
         # filter(lambda p: p.requires_grad) ensures the optimizer ignores frozen layers
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["LEARNING_RATE"])
