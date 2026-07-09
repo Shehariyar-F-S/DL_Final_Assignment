@@ -71,7 +71,7 @@ All parameters controlled via `Code/config.json`:
 {
  "DATA_PATH": "../Data",
  "BATCH_SIZE": 64,
- "LEARNING_RATE": 0.001,
+ "LEARNING_RATE": 0.0001,
  "EPOCHS": 20,
  "VAL_SPLIT": 0.1,
  "PRUNE_AMOUNT": 0.3,
