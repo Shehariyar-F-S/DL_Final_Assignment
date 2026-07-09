@@ -27,7 +27,7 @@ This repository contains the fully restored, production-grade multi-class clinic
 
 ## Branch Structure
 ```text
-main                      <- Final merged solution
+main                      <- Final merged solution (Task 1 + Task 2)
 task1-bug-fixes           <- Task 1 development history
 task2-green-initiative    <- Task 2 development history
 task3-organs-transfer     <- Task 3 development branch
@@ -108,7 +108,7 @@ python train_task3.py
 | Model | Approx. Params | Key Feature |
 | :--- | :--- | :--- |
 | AlexNet | ~61M* | Decreasing kernel sizes 7 to 5 to 3 |
-| VGG16 | ~138M* | Systematic 3x3 convolutions |
+| VGG16 | ~12.6M* | Systematic 3x3 convolutions |
 | ResNet18 | ~11.2M | Skip connections |
 
 *\*Adapted for 64x64 inputs — fewer params than original.*
@@ -118,7 +118,7 @@ python train_task3.py
 | :--- | :--- | :--- | :--- |
 | ResNet18 | ~11.2M | ~11.2M | baseline |
 | GreenResNet18 | ~2.7M | ~1.9M active | ~83% fewer than ResNet18 |
-| GreenVGG16 | ~3.1M | <2.5M active | ~98% fewer than VGG16 |
+| GreenVGG16 | ~3.1M | <2.5M active | ~80% fewer than VGG16 |
 
 *Approximate values. Two-stage strategy: (1) channel halving, (2) L1 unstructured pruning (30%). Exact count: `sum(p.numel() for p in model.parameters())`*
 
@@ -146,6 +146,5 @@ python train_task3.py
 | AlexNet | 94.62% | 87.66% | 76.96% | 90.35% |
 
 All targets met. Full analysis in `REPORT.md`.
-Bug fixes and Audits in `AUDIT_LOG.md` 
-
+All bug fixes and audits are in `AUDIT_LOG.md`.
 
