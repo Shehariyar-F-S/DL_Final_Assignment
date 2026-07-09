@@ -21,8 +21,9 @@ def run_organs_benchmark(config, device, train_loader, val_loader, test_loader, 
       - Largest training set in our registry (15,367 samples)
       - Closest semantic domain (anatomical organ imaging)
     """
-    criterion = nn.CrossEntropyLoss()
-    def train_and_eval(model, name):
+     criterion = nn.CrossEntropyLoss()
+
+     def train_and_eval(model, name):
         """Helper to train any model and return its 5 evaluate metrics"""
         # filter(lambda p: p.requires_grad) ensures the optimizer ignores frozen layers
         optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config["LEARNING_RATE"])
@@ -33,35 +34,35 @@ def run_organs_benchmark(config, device, train_loader, val_loader, test_loader, 
         
     # --- Benchmark A: Scratch ---
     
-    print("\n[PART 3 - A] Training ResNet18 from SCRATCH on 'organs'...")
-    model_a = models.ResNet18(in_channels=channels, num_classes=num_classes).to(device)
-    a_loss, a_acc, a_prec, a_rec, a_f1 = train_and_eval(model_a, "organs_scratch")
+     print("\n[PART 3 - A] Training ResNet18 from SCRATCH on 'organs'...")
+     model_a = models.ResNet18(in_channels=channels, num_classes=num_classes).to(device)
+     a_loss, a_acc, a_prec, a_rec, a_f1 = train_and_eval(model_a, "organs_scratch")
     
     # --- Benchmark B: All Frozen ---
     
-    print("\n[PART 3 - B] Feature Extraction (ALL Conv layers frozen, only classifier trains)")
-    model_b = models.FrozenTransferResNet18(in_channels=channels, num_classes=num_classes).to(device)
-    b_loss, b_acc, b_prec, b_rec, b_f1 = train_and_eval(model_b, "organs_frozen_all")
+     print("\n[PART 3 - B] Feature Extraction (ALL Conv layers frozen, only classifier trains)")
+     model_b = models.FrozenTransferResNet18(in_channels=channels, num_classes=num_classes).to(device)
+     b_loss, b_acc, b_prec, b_rec, b_f1 = train_and_eval(model_b, "organs_frozen_all")
     
     # --- Benchmark C: Stage 4 Unfrozen(partial fine-tuning) ---
     
-    print("\n[PART 3 - C] Training Transfer Model (STAGE 4 UNFROZEN)...")
-    model_c = models.FineTunedTransferResNet18(in_channels=channels, num_classes=num_classes).to(device)
-    c_loss, c_acc, c_prec, c_rec, c_f1 = train_and_eval(model_c, "organs_partial_unfreeze")
+     print("\n[PART 3 - C] Training Transfer Model (STAGE 4 UNFROZEN)...")
+     model_c = models.FineTunedTransferResNet18(in_channels=channels, num_classes=num_classes).to(device)
+     c_loss, c_acc, c_prec, c_rec, c_f1 = train_and_eval(model_c, "organs_partial_unfreeze")
 
     # --- Print the 3-Way Matrix ---
 
-    print("\n" + "="*75)
-    print(" PART 3 — SCARCE-DATA BENCHMARK MATRIX | Dataset: organs")
-    print("="*75)
-    print(f"{'Metric':<18} {'Scratch (A)':>15} {'All Frozen (B)':>18} {'Stage4 Unfrozen (C)':>20}")
-    print("-"*75)
-    print(f"{'Test Accuracy':<18} {a_acc:>14.2f}% {b_acc:>17.2f}% {c_acc:>19.2f}%")
-    print(f"{'Precision':<18} {a_prec:>14.2f}% {b_prec:>17.2f}% {c_prec:>19.2f}%")
-    print(f"{'Recall':<18} {a_rec:>14.2f}% {b_rec:>17.2f}% {c_rec:>19.2f}%")
-    print(f"{'F1-Score':<18} {a_f1:>14.2f}% {b_f1:>17.2f}% {c_f1:>19.2f}%")
-    print(f"{'Test Loss':<18} {a_loss:>15.4f} {b_loss:>18.4f} {c_loss:>20.4f}")
-    print("="*75)
+     print("\n" + "="*75)
+     print(" PART 3 — SCARCE-DATA BENCHMARK MATRIX | Dataset: organs")
+     print("="*75)
+     print(f"{'Metric':<18} {'Scratch (A)':>15} {'All Frozen (B)':>18} {'Stage4 Unfrozen (C)':>20}")
+     print("-"*75)
+     print(f"{'Test Accuracy':<18} {a_acc:>14.2f}% {b_acc:>17.2f}% {c_acc:>19.2f}%")
+     print(f"{'Precision':<18} {a_prec:>14.2f}% {b_prec:>17.2f}% {c_prec:>19.2f}%")
+     print(f"{'Recall':<18} {a_rec:>14.2f}% {b_rec:>17.2f}% {c_rec:>19.2f}%")
+     print(f"{'F1-Score':<18} {a_f1:>14.2f}% {b_f1:>17.2f}% {c_f1:>19.2f}%")
+     print(f"{'Test Loss':<18} {a_loss:>15.4f} {b_loss:>18.4f} {c_loss:>20.4f}")
+     print("="*75)
 
 def main():   
     with open("config.json", "r") as f:

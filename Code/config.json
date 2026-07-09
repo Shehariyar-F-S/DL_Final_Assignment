@@ -1,6 +1,11 @@
 {
   "DATASETS": [
     {
+      "DATA": "orgs",
+      "CHANNELS": 1,
+      "NUM_CLASSES": 11
+    },
+    {
       "DATA": "organs",
       "CHANNELS": 1,
       "NUM_CLASSES": 11
@@ -11,9 +16,5 @@
   "LEARNING_RATE": 0.0001,
   "EPOCHS": 20,
   "VAL_SPLIT": 0.2,
-  "MODELS": [
-    "ResNet18",
-    "FrozenTransferResNet18",
-    "FineTunedTransferResNet18"
-  ]
+  "MODELS": ["ResNet18"]
 }
